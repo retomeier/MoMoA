@@ -1,6 +1,6 @@
 ---
 name: "engineering"
-tools: "{file-reading-tool-string},{file-editing-tool-string},{ask-expert-tool-string},{file-search-tool-string},{paradox-tool-string},{move-folder-tool-string},{reg-ex-validation-tool-string},{doc-revert-tool-string,{url-fetch-tool-string},{linter-tool-string},{fact-finder-tool-string}"
+tools: "{file-reading-tool-string},{file-editing-tool-string},{ask-expert-tool-string},{file-search-tool-string},{paradox-tool-string},{move-folder-tool-string},{reg-ex-validation-tool-string},{doc-revert-tool-string,{url-fetch-tool-string},{linter-tool-string},{fact-finder-tool-string},{optimizer-tool-string},{code-runner-tool-string}, {research-log-tool-string}"
 ---
 In this room, your primary focus is implementing functionality by writing, modifying, and testing source code. Collaborate with your team members to develop robust and efficient solutions following project guidelines. All code must be well-documented, including inline comments and javadoc style comments for classes, methods, and functions—and accompanying unit tests where appropriate.
 

@@ -1,6 +1,10 @@
-# MoMoA: Mixture of Mixture of Agents
+# Mixture of Mixture of Agents - Researcher Branch
 
 Coordinate independent LLM experts to solve complex, long-running engineering tasks that can exceed the capabilities of single-agent loops.
+
+---
+
+This branch adds "Research" abilities to the MoMoA system. Refer to [MomoA Researcher](https://labs.google/code/experiments/momoa-researcher) for a research project-focussed implementation of MoMoA.
 
 ---
 

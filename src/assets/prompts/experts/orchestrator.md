@@ -112,7 +112,7 @@ ${tool-instructions/url-fetch-tool-string}
 
 ----
 
-${tool-instructions/stitch-tool-string}
+${tool-instructions/research-log-tool-string}
 
 ----
 

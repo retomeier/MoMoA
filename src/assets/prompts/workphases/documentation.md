@@ -1,6 +1,6 @@
 ---
 name: "documentation"
-tools: "{file-reading-tool-string},{file-editing-tool-string},{file-search-tool-string},{paradox-tool-string},{url-fetch-tool-string},{fact-finder-tool-string}"
+tools: "{file-reading-tool-string},{file-editing-tool-string},{file-search-tool-string},{paradox-tool-string},{url-fetch-tool-string},{fact-finder-tool-string},{research-log-tool-string}"
 ---
 In this room, you collaborate to create or edit a document to fulfill the assigned task. This might be based on a specific document request or a more general task requiring documentation as the output. You must ensure that the document is accurate, truthful, and correct to the best of your abilities.
 
