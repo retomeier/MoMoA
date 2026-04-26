@@ -17,6 +17,7 @@
 import { MultiAgentTool } from '../multiAgentTool.js';
 import { MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from '../../momoa_core/types.js';
 import { fileNameLookup } from '../../utils/fileNameLookup.js';
+import { getCombinedFileMap } from '../../utils/fileMapUtils.js';
 import { generateDiffString, isLockFile, getLockFileHiddenPlaceholder } from '../../utils/diffGenerator.js';
 import { getAssetString } from '../../services/promptManager.js';
 import { updateFileEntry } from '../../utils/fileAnalysis.js';
@@ -59,10 +60,7 @@ export const revertFileTool: MultiAgentTool = {
     }
 
     // Use fileNameLookup to find the precise file name
-    const allFilesMap = new Map<string, string>([
-      ...context.fileMap,
-      ...Array.from(context.binaryFileMap.keys()).map(key => [key, ''] as [string, string])
-    ]);
+    const allFilesMap = getCombinedFileMap(context.fileMap, context.binaryFileMap);
     const filename = await fileNameLookup(providedFilename, allFilesMap, context.multiAgentGeminiClient);
 
     const originalExisted = context.originalFileMap.has(filename) || context.originalBinaryFileMap.has(filename);

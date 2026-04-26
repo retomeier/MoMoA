@@ -16,6 +16,7 @@
 
 import { MultiAgentTool } from '../multiAgentTool.js';
 import { fileNameLookup } from '../../utils/fileNameLookup.js';
+import { getCombinedFileMap } from '../../utils/fileMapUtils.js';
 import { fileReaderTool } from './fileReaderTool.js';
 import { addDynamicallyRelevantFile, removeFileEntry, updateFileEntry } from '../../utils/fileAnalysis.js';
 import { FileOperation, MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from '../../momoa_core/types.js';
@@ -442,10 +443,7 @@ export const smartFileEditorTool: MultiAgentTool = {
     }
     
     // Combine all file keys for a comprehensive lookup.
-    const allFilesMap = new Map<string, string>([
-        ...context.fileMap,
-        ...Array.from(context.binaryFileMap.keys()).map(key => [key, ''] as [string, string])
-    ]);
+    const allFilesMap = getCombinedFileMap(context.fileMap, context.binaryFileMap);
 
     if (isUnambiguousCreate) {
         // This is a CREATE or OVERWRITE. The file does not need to exist.

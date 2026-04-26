@@ -16,6 +16,7 @@
 
 import { MultiAgentTool } from '../multiAgentTool.js';
 import { fileNameLookup } from '../../utils/fileNameLookup.js';
+import { getCombinedFileMap } from '../../utils/fileMapUtils.js';
 import { addDynamicallyRelevantFile, getFileAnalysis, updateFileEntry } from '../../utils/fileAnalysis.js';
 import { MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from '../../momoa_core/types.js';
 import { getAssetString } from '../../services/promptManager.js';
@@ -46,10 +47,7 @@ export const fileReaderTool: MultiAgentTool = {
     }
 
     // Combine keys from both maps for a comprehensive lookup.
-    const allFilesMap = new Map<string, string>([
-      ...context.fileMap,
-      ...Array.from(context.binaryFileMap.keys()).map(key => [key, ''] as [string, string])
-    ]);
+    const allFilesMap = getCombinedFileMap(context.fileMap, context.binaryFileMap);
 
     // const filename = await fileNameLookup(providedFilename, allFilesMap, context.multiAgentGeminiClient);
     let filename = providedFilename.trim();

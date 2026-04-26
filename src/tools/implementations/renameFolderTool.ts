@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from "../../momoa_core/types.js";
-import { addDynamicallyRelevantFile, getFileAnalysis, removeFileEntry, updateFileEntry } from "../../utils/fileAnalysis.js";
+import { MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from '../../momoa_core/types.js';
+import { addDynamicallyRelevantFile, getFileAnalysis, removeFileEntry, updateFileEntry } from '../../utils/fileAnalysis.js';
+import { getAllFileKeys } from '../../utils/fileMapUtils.js';
 import { MultiAgentTool } from "../multiAgentTool.js";
 
 /**
@@ -42,7 +43,7 @@ export const moveFolderTool: MultiAgentTool = {
     addDynamicallyRelevantFile(destination);
 
     let sourceExists = false;
-    const allFileKeys = [...context.fileMap.keys(), ...context.binaryFileMap.keys()];
+    const allFileKeys = getAllFileKeys(context.fileMap, context.binaryFileMap);
 
     // Check if the source path exists as a direct file entry
     if (context.fileMap.has(source) || context.binaryFileMap.has(source)) {
