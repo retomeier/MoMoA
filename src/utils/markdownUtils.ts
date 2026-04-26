@@ -18,6 +18,7 @@ import { MultiAgentToolContext } from "../momoa_core/types.js";
 import { getAssetString } from "../services/promptManager.js";
 import { getFileAnalysis } from "./fileAnalysis.js";
 import { fileNameLookup } from "./fileNameLookup.js";
+import { getCombinedFileMap } from "./fileMapUtils.js";
 
 /**
  * Removes triple backtick fences from a string if they exist at the start and end.
@@ -211,10 +212,7 @@ export async function getFilesAndContent(requestedFiles: {FILENAME: string, DESC
   let result = '--No Files--';
   if (requestedFiles && requestedFiles.length > 0 && (context.fileMap || context.binaryFileMap)) {
     // Combine text and binary file maps for a comprehensive file lookup.
-    const allFilesMap = new Map<string, string>([
-      ...context.fileMap,
-      ...Array.from(context.binaryFileMap.keys()).map(key => [key, ''] as [string, string])
-    ]);
+    const allFilesMap = getCombinedFileMap(context.fileMap, context.binaryFileMap);
 
     const fileResults: string[] = [];
 

@@ -17,6 +17,7 @@
 import { applyPatch, createTwoFilesPatch, parsePatch } from 'diff';
 import { MultiAgentToolContext } from '../momoa_core/types.js';
 import { Buffer } from 'node:buffer';
+import { getCombinedFileMap } from './fileMapUtils.js';
 import * as zlib from 'node:zlib';
 
 const LOCK_FILE_NAMES = new Set([
@@ -268,14 +269,12 @@ export function applyDiff(
 
 export function generateDiffString(context: MultiAgentToolContext, redactFiles: boolean = false): string {
   const binaryPlaceholder = "[binary file content]";
-  const combinedOriginalFileMap = new Map<string, string>([
-      ...(context.originalFileMap || new Map()),
-      ...Array.from(context.originalBinaryFileMap?.keys() || []).map(key => [key, binaryPlaceholder] as [string, string])
-  ]);
-  const combinedFinalFileMap = new Map<string, string>([
-      ...context.fileMap,
-      ...Array.from(context.binaryFileMap.keys()).map(key => [key, binaryPlaceholder] as [string, string])
-  ]);
+  const combinedOriginalFileMap = getCombinedFileMap(
+      context.originalFileMap || new Map(),
+      context.originalBinaryFileMap || new Map(),
+      binaryPlaceholder
+  );
+  const combinedFinalFileMap = getCombinedFileMap(context.fileMap, context.binaryFileMap, binaryPlaceholder);
   
   const allBinaryFiles = new Set([
       ...(context.originalBinaryFileMap?.keys() || []),

@@ -17,6 +17,7 @@
 import { MultiAgentTool } from '../multiAgentTool.js';
 import { findInFiles } from '../../utils/fileAnalysis.js';
 import { MultiAgentToolContext, MultiAgentToolResult, ToolParsingResult } from '../../momoa_core/types.js';
+import { getAllFileKeys } from '../../utils/fileMapUtils.js';
 
 /**
  * Implements the File Reader Tool, providing functionality to read file content
@@ -48,7 +49,7 @@ export const fileSearchTool: MultiAgentTool = {
     const searchResults = new Set<string>(contentMatches);
 
     // 2. Search all filenames (both text and binary).
-    const allFilenames = [...context.fileMap.keys(), ...context.binaryFileMap.keys()];
+    const allFilenames = getAllFileKeys(context.fileMap, context.binaryFileMap);
     for (const filename of allFilenames) {
         if (filename.includes(query)) {
             if (context.binaryFileMap.has(filename)) {

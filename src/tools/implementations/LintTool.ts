@@ -23,6 +23,7 @@ import { randomUUID } from 'crypto';
 import { tmpdir } from 'os';
 import { isLockFile } from '../../utils/diffGenerator.js';
 import { fileNameLookup } from '../../utils/fileNameLookup.js';
+import { getCombinedFileMap } from '../../utils/fileMapUtils.js';
 
 // --- Utility Functions ---
 
@@ -201,10 +202,7 @@ export const LintTool: MultiAgentTool = {
     }
 
     // Combine keys from both maps for a comprehensive lookup.
-    const allFilesMap = new Map<string, string>([
-      ...context.fileMap,
-      ...Array.from(context.binaryFileMap.keys()).map(key => [key, ''] as [string, string])
-    ]);
+    const allFilesMap = getCombinedFileMap(context.fileMap, context.binaryFileMap);
 
     let filename = providedFilename.trim();
     
