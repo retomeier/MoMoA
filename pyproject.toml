@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "momoa-cli"
+version = "0.1.0"
+description = "MoMoA: Mixture of Mixture of Agents CLI"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "websocket-client"
+]
+
+[project.scripts]
+momoa = "momoa_cli.python_cli:main"
+
+[tool.setuptools]
+packages = ["momoa_cli"]
+
+[tool.setuptools.package-dir]
+momoa_cli = "client-cli"

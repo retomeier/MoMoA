@@ -6,3 +6,6 @@ dist
 changes.patch
 .firebase-service-account.json
 .env
+
+# Python package metadata
+*.egg-info/

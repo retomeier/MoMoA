@@ -24,7 +24,10 @@ import shutil
 import pathlib
 
 # Import the necessary function from the agentignore_rules module
-from agentignore_rules import evaluate_path # Assuming momoa_client is package root
+try:
+    from agentignore_rules import evaluate_path
+except ModuleNotFoundError:
+    from .agentignore_rules import evaluate_path # Assuming momoa_cli is package root
 
 # Variable to store the number of lines the wrapped question takes
 question_lines_count = None
@@ -557,6 +560,10 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    # If no directory or files specified, default to current directory
+    if args.directory is None and not args.files:
+        args.directory = os.getcwd()
     
     # --------------------------------------------------------------------------
     # MODIFIED: Check if --spec and --env arguments are file paths.
