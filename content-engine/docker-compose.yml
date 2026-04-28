@@ -1,0 +1,188 @@
+version: "3.8"
+
+volumes:
+  db_storage:
+  n8n_storage:
+  redis_storage:
+  minio_storage:
+
+networks:
+  content_engine_net:
+
+services:
+  # ---------------------------------------------------------
+  # FastAPI Custom Backend (Video Gen & RAG)
+  # ---------------------------------------------------------
+  fastapi_backend:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: fastapi_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - content_engine_net
+    environment:
+      - WORKSPACE_DIR=/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # Persistence Layer (Postgres 13+ & Redis)
+  # ---------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: n8n_postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=n8n
+      - POSTGRES_PASSWORD=n8n_secret_password
+      - POSTGRES_DB=n8n
+    volumes:
+      - db_storage:/var/lib/postgresql/data
+    networks:
+      - content_engine_net
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U n8n -d n8n']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: n8n_redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_storage:/data
+    networks:
+      - content_engine_net
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------
+  # Object Storage (MinIO for S3 compatibility)
+  # ---------------------------------------------------------
+  minio:
+    image: minio/minio
+    container_name: n8n_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_storage:/data
+    networks:
+      - content_engine_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ---------------------------------------------------------
+  # n8n Distributed Architecture (Queue Mode)
+  # ---------------------------------------------------------
+  n8n_main:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n_main
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # Database
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n_secret_password
+      # Queue Mode & Redis
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD=10000
+      - N8N_GRACEFUL_SHUTDOWN_TIMEOUT=30
+      # Security (Must match across all nodes)
+      - N8N_ENCRYPTION_KEY=super_secret_encryption_key_12345
+      # Disable Webhooks on Main (Routing to webhook processor)
+      - N8N_DISABLE_PRODUCTION_WEBHOOKS_ON_MAIN_PROCESS=true
+      # S3 Storage Configuration
+      - N8N_DEFAULT_BINARY_DATA_MODE=filesystem
+      #- N8N_BINARY_DATA_STORAGE_PATH=/data
+      # Since Queue mode does not support local storage, ideally use S3 variables below,
+      # but standard n8n S3 variables require Enterprise for native binary data offloading.
+      # We will rely on nodes passing data via S3 directly or via shared volume as a fallback if not enterprise.
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - n8n_storage:/home/node/.n8n
+    networks:
+      - content_engine_net
+
+  n8n_worker_1:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n_worker_1
+    restart: always
+    command: worker
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n_secret_password
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - N8N_ENCRYPTION_KEY=super_secret_encryption_key_12345
+      # Worker Specific Concurrency
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - EXECUTIONS_DATA_PRUNE=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - content_engine_net
+
+  n8n_webhook_processor:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n_webhook_processor
+    restart: always
+    command: webhook
+    ports:
+      - "5679:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n_secret_password
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - N8N_ENCRYPTION_KEY=super_secret_encryption_key_12345
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - content_engine_net
