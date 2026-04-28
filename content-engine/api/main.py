@@ -1,84 +1,90 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from decimal import Decimal
 import math
+import uuid
+import logging
+import asyncio
+
+from agents import DirectorAgent, ProducerAgent, EditorAgent
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("Orchestrator")
 
 app = FastAPI(
-    title="Automated Social Media Content Engine API",
-    description="FastAPI layer for AI Agents, Video Generation, and NotebookLM ingestion.",
-    version="2.0.0"
+    title="Automated Multi-Agent Video Engine",
+    description="Fully autonomous, free-tier architecture for generating 9:16 social media videos.",
+    version="3.0.0"
 )
 
-# ---------------------------------------------------------
-# Pydantic Schemas
-# ---------------------------------------------------------
-class GenerationRequest(BaseModel):
-    prompt: str
-    target_platform: str
+class VideoRequest(BaseModel):
+    topic: str
 
-class WebhookPayload(BaseModel):
-    source: str
-    data: dict
+def run_agentic_pipeline(topic: str, job_id: str):
+    """
+    The main orchestrator loop coordinating the 3 Agents.
+    Runs synchronously but handles asyncio internally for edge-tts.
+    """
+    logger.info(f"=== Starting Job {job_id} for topic: {topic} ===")
 
-# ---------------------------------------------------------
-# RAG and NotebookLM Endpoints
-# ---------------------------------------------------------
-@app.post("/api/v1/notebooklm/ingest", tags=["Data Ingestion"])
-async def ingest_notebooklm_data(payload: WebhookPayload):
-    """
-    Listener for NotebookLM data ingestion from Google Drive.
-    Expects webhooks triggering updates when new source materials are added.
-    """
-    # TODO: Implement webhook validation, parsing, and triggering the agentic workflow.
-    return {"status": "success", "message": "Data received and queued for processing.", "source": payload.source}
+    # 1. Director Agent: Write Script
+    director = DirectorAgent()
+    script_data = director.generate_script(topic)
+    logger.info(f"Script Generated: {script_data['title']}")
 
-@app.post("/api/v1/rag/query", tags=["RAG"])
-async def query_knowledge_base(query: str):
-    """
-    Query the vector store (FAISS/Pinecone) and return grounded answers.
-    """
-    # TODO: Implement integration with Gemini 1.5 Pro 2M context window.
-    return {"status": "success", "answer": f"Simulated answer for: {query}"}
+    # 2. Producer Agent: Gather Media
+    producer = ProducerAgent()
 
-# ---------------------------------------------------------
-# Video Generation Endpoints (Google Vids / Remotion / FFmpeg)
-# ---------------------------------------------------------
+    # Fetch Video
+    bg_video_path = producer.fetch_background_video(script_data["search_query"], job_id)
+
+    # Generate Audio (need new event loop since this is a background task)
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    audio_path = loop.run_until_complete(producer.generate_voiceover(script_data["voiceover_text"], job_id))
+
+    # 3. Editor Agent: Render Video
+    editor = EditorAgent()
+    final_video_path = editor.render_video(script_data, audio_path, bg_video_path, job_id)
+
+    logger.info(f"=== Job {job_id} Finished! Video available at {final_video_path} ===")
+
+
 @app.post("/api/v1/video/generate", tags=["Video Generation"])
-async def generate_video(request: GenerationRequest):
+async def generate_video_endpoint(request: VideoRequest, background_tasks: BackgroundTasks):
     """
-    Trigger the programmatic video generation pipeline (Remotion/Editly).
+    Trigger the Multi-Agent video generation pipeline.
+    Runs in the background to avoid HTTP timeouts.
     """
-    # TODO: Orchestrate Director Agent, Producer Agent, and ShortsAgent.
-    return {"status": "processing", "message": "Video generation pipeline triggered.", "job_id": "job_12345"}
+    job_id = str(uuid.uuid4())[:8]
+    background_tasks.add_task(run_agentic_pipeline, request.topic, job_id)
 
-@app.post("/api/v1/video/vids/placeholder", tags=["Google Vids"])
-async def trigger_google_vids():
-    """
-    Placeholder endpoint for Google Vids integration.
-    """
-    # TODO: Implement future Google Vids API calls.
-    return {"status": "pending", "message": "Google Vids integration placeholder."}
+    return {
+        "status": "processing",
+        "message": f"Multi-Agent pipeline triggered for '{request.topic}'",
+        "job_id": job_id,
+        "output_dir": "/app/output"
+    }
 
-# ---------------------------------------------------------
-# Utility / Health Check
-# ---------------------------------------------------------
 @app.get("/health", tags=["Health"])
 async def health_check():
     """
-    Health check endpoint for the Docker container.
+    Health check endpoint.
     """
-    # Example of floating point constraint from .rules
-    budget = Decimal("1000.00")
-    cost_per_video = Decimal("10.50")
-    total_cost = cost_per_video * 12
-    remaining_budget = budget - total_cost
-
-    return {
-        "status": "healthy",
-        "daily_volume_target": 12,
-        "remaining_budget_chf": float(remaining_budget) # Cast to float for JSON serialization
-    }
+    return {"status": "healthy", "version": "3.0.0"}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import sys
+
+    # Allow CLI execution for testing
+    if len(sys.argv) > 1 and sys.argv[1] == "--cli":
+        topic = "The hidden secrets of the deep ocean" if len(sys.argv) == 2 else sys.argv[2]
+        job_id = "cli_test"
+        run_agentic_pipeline(topic, job_id)
+    else:
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=8000)

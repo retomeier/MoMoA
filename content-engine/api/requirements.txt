@@ -5,3 +5,8 @@ brax>=0.10.0
 jax>=0.4.26
 jaxlib>=0.4.26
 playwright>=1.42.0
+moviepy==1.0.3
+edge-tts>=6.1.10
+google-generativeai>=0.4.1
+requests>=2.31.0
+python-dotenv>=1.0.1
