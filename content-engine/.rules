@@ -1,7 +1,0 @@
-# Antigravity & Financial Accuracy Rules
-# Enforces guidelines for floating point precision and physics-engine simulation.
-
-1.  **Exact Representation:** For all budget, token cost, or financial tracking metrics, ALWAYS use the `decimal` module (`from decimal import Decimal`) or `fractions`. Never use standard floating-point numbers (`float`).
-2.  **Comparisons:** Never use the `==` operator for floating point or approximate calculations. Always use `math.isclose()` to verify if two numeric values are effectively equal.
-3.  **Lossless Summation:** When accumulating values (e.g., token costs over a loop), use `math.fsum()` instead of `sum()` to prevent loss of precision.
-4.  **Brax Integration:** For advanced video kinematics or physics-based simulations, utilize `brax` (JAX-based) for hardware-accelerated, parallel environments.

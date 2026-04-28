@@ -1,7 +1,0 @@
-fastapi>=0.110.0
-uvicorn>=0.29.0
-pydantic>=2.7.0
-brax>=0.10.0
-jax>=0.4.26
-jaxlib>=0.4.26
-playwright>=1.42.0
