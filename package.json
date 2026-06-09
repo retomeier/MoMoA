@@ -36,6 +36,7 @@
     "@agentclientprotocol/sdk": "^0.13.1",
     "@durable-streams/client": "^0.2.1",
     "@durable-streams/server": "^0.2.1",
+    "@google-cloud/run": "^3.2.1",
     "@google/genai": "^1.46.0",
     "@google/stitch-sdk": "^0.0.3",
     "@types/jsdom": "^27.0.0",

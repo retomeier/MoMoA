@@ -15,20 +15,61 @@
  */
 
 import * as os from 'os';
+import * as fs from 'fs';
+import { execSync } from 'child_process';
+
+// Helper to get true available memory across Linux and Mac
+export function getAvailableMemoryBytes(): number {
+  const platform = os.platform();
+
+  if (platform === 'linux') {
+    // Linux (Cloud Run) approach: Parse /proc/meminfo
+    try {
+      const meminfo = fs.readFileSync('/proc/meminfo', 'utf8');
+      const match = meminfo.match(/^MemAvailable:\s+(\d+)\s+kB/m);
+      if (match) {
+        return parseInt(match[1], 10) * 1024; // Convert kB to Bytes
+      }
+    } catch (e) {
+      console.warn('Could not read /proc/meminfo. Falling back to os.freemem()');
+    }
+  } else if (platform === 'darwin') {
+    // macOS (Local) approach: Parse vm_stat and hw.pagesize
+    try {
+      const vmStat = execSync('vm_stat', { encoding: 'utf8' });
+      const pageSize = parseInt(execSync('sysctl -n hw.pagesize', { encoding: 'utf8' }).trim(), 10);
+
+      // Extract page counts using regex
+      const getPageCount = (key: string) => {
+        const match = vmStat.match(new RegExp(`${key}:\\s+(\\d+)`));
+        return match ? parseInt(match[1], 10) : 0;
+      };
+
+      const pagesFree = getPageCount('Pages free');
+      const pagesInactive = getPageCount('Pages inactive');
+      const pagesSpeculative = getPageCount('Pages speculative');
+
+      // Available memory is free pages + reclaimable cached pages
+      return (pagesFree + pagesInactive + pagesSpeculative) * pageSize;
+    } catch (e) {
+      console.warn('Could not execute vm_stat. Falling back to os.freemem()');
+    }
+  }
+
+  // Fallback for Windows or if commands fail
+  return os.freemem();
+}
 
 export function checkContainerMemory(): string {
-  // Helper to convert bytes to Megabytes
   const toMB = (bytes: number) => Math.round((bytes / 1024 / 1024) * 100) / 100;
-
-  // Container/System level memory (What Cloud Run gives you)
   const totalMem = os.totalmem();
-  const freeMem = os.freemem();
-  const usedMem = totalMem - freeMem;
 
-  // Process level memory (What your Node server is currently eating)
-  const procMem = process.memoryUsage();
-
-  let memory = `Total Container Memory     : ${toMB(totalMem)} MB\n\n`;
-  memory +=    `Container Available Memory : ${toMB(freeMem)} MB`;
-  return memory;
+  if (os.platform() != 'linux') {
+   return `Managed memory environment: ${toMB(totalMem)} MB`;
+  } else {
+    const availableMem = getAvailableMemoryBytes();
+    let memory = `Total Container  Memory    : ${toMB(totalMem)} MB\n\n`;
+    memory +=    `Container Available Memory : ${toMB(availableMem)} MB`;
+    return memory;
+  }
 }
