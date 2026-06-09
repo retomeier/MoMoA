@@ -1,4 +1,3 @@
-workspace.code-workspace
 node_modules/
 __pycache__
 dist
@@ -6,3 +5,4 @@ dist
 changes.patch
 .firebase-service-account.json
 .env
+*.code-workspace
