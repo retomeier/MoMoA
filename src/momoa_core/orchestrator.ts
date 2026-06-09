@@ -34,14 +34,13 @@ import { getFAQs } from '../utils/faqs.js';
 import { analyzeAndSetTaskRelevantFiles, analyzeFiles, getTaskRelevantFileDescriptions } from '../utils/fileAnalysis.js';
 import { removeBacktickFences, replaceContentBetweenMarkers } from '../utils/markdownUtils.js';
 import { enrichPrompt } from '../utils/promptEnrichment.js';
-import { Overseer } from './overseer.js'; // Import the Overseer class and Manager
-import { MultiAgentToolContext, ToolConfirmationOutcome, GuidanceType, InfrastructureContext } from './types.js';
-import { WorkPhase } from './workPhase.js'; // Import the WorkPhase class
+import { Overseer } from './overseer.js';
+import { MultiAgentToolContext, ToolConfirmationOutcome, GuidanceType, InfrastructureContext, ToolExecutionEnvironmentType } from './types.js';
+import { WorkPhase } from './workPhase.js';
 import { LlmBlockedError } from '../shared/errors.js';
 import { generateSessionTitle } from '../utils/sessionTitleGenerator.js';
 import { withDeadline } from '../utils/timeoutHelper.js';
 import { CleanFormattedDateTime } from '../utils/dateTimeStrings.js';
-import { checkContainerMemory } from '../utils/memoryChecker.js';
 
 const EXISTING_FILES_ID = "EXISTING_FILES_ID";
 const EXISTING_FAQ_ID = "EXISTING_FAQ_ID";
@@ -82,6 +81,7 @@ export class Orchestrator {
   private maxDurationMs?: number;
   private gracePeriodMs?: number;
   private hasWarnedTimeLow: boolean = false;
+  private toolExecutionEnvironment: string;
 
   /**
    * Initializes a new instance of the Orchestrator.
@@ -117,7 +117,8 @@ export class Orchestrator {
     signal?: AbortSignal,
     mode?: ServerMode,
     maxDurationMs?: number,
-    gracePeriodMs?: number
+    gracePeriodMs?: number,
+    toolExecutionEnvironment?: string,
   ) {
     this.initialPrompt = initialPrompt;
     this.initialImage = initialImage;
@@ -155,6 +156,8 @@ export class Orchestrator {
     this.maxDurationMs = maxDurationMs ?? undefined; 
     this.gracePeriodMs = gracePeriodMs ?? undefined;
 
+    this.toolExecutionEnvironment = toolExecutionEnvironment ?? ToolExecutionEnvironmentType.Local;
+
     this.toolContext = {
       fileMap: this.fileMap,
       binaryFileMap: this.binaryFileMap,
@@ -181,6 +184,7 @@ export class Orchestrator {
       projectSpecification: this.projectSpecification,
       environmentInstructions: this.environmentInstructions,
       notWorkingBuild: this.notWorkingBuild,
+      toolExecutionEnvironment: this.toolExecutionEnvironment,
       sessionTitle: this.sessionTitle,
     };
   }

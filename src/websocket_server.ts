@@ -351,6 +351,11 @@ async function handleInitialRequest(clientUUID: string, requestData: InitialRequ
       stitchApiKey: process.env.STITCH_API_KEY || '',
       e2BApiKey: process.env.E2B_API_KEY || '',
       githubScratchPadRepo: process.env.GITHUB_SCRATCHPAD_REPO || '',
+      gcpProjectId: process.env.GCP_PROJECT_ID || '',
+      googleAccessToken: process.env.GOOLGE_ACCESS_TOKEN || '',
+      cloudWorkstationName: process.env.CLOUD_WORKSTATION_NAME || '',
+      sshTunnelUrl: process.env.SSH_TUNNEL_URL || "",
+      remoteDesktopKey: process.env.REMOTE_DESKTOP_AGENT_KEY || '',
     };
 
     const orchestrator = new Orchestrator(

@@ -58,6 +58,7 @@ export interface InitialRequestData {
   weaveId?: string;
   maxDurationMs?: number;
   gracePeriodMs?: number;
+  toolExecutionEnvironment?: string;
 }
 
 export interface UserSecrets {
@@ -67,6 +68,11 @@ export interface UserSecrets {
   stitchApiKey: string;
   e2BApiKey: string;
   githubScratchPadRepo: string;
+  gcpProjectId: string;
+  googleAccessToken: string;
+  cloudWorkstationName: string;
+  sshTunnelUrl: string;
+  remoteDesktopKey: string;
 }
 
 /**

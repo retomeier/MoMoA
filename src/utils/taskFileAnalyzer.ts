@@ -114,7 +114,7 @@ export async function analyzeRelevantFilesForTask(
   binaryFileMap: Map<string, string>,
   infrastructureContext: InfrastructureContext,
   multiAgentGeminiClient: GeminiClient,
-  sendMessage: (message: string) => void,
+  sendMessage: (message: any) => void,
   image?: string,
   imageMimeType?: string
 ): Promise<TaskRelevantFile[]> {
@@ -126,10 +126,10 @@ export async function analyzeRelevantFilesForTask(
     }));
 
     if (updateProgress) {
-      sendMessage(JSON.stringify({
-        status: 'PROGRESS_UPDATES',
-        completed_status_message: message,
-      }));
+      sendMessage({
+        type: 'PROGRESS_UPDATE',
+        message: message,
+      });
     }
   };
 
@@ -170,6 +170,7 @@ export async function analyzeRelevantFilesForTask(
     julesBranchName: null,
     saveFiles: false,
     secrets: {} as any,
+    toolExecutionEnvironment: ""
   };
   
   const toolPrefix = await getAssetString('tool-prefix');
